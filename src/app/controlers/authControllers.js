@@ -4,6 +4,7 @@ const User  = require("../models/user")
 const jwt = require("jsonwebtoken")
 const authConfig = require('../../config/auth.json')
 const crypito = require('crypto')
+const mailer = require("../../modules/mailer")
 
 const router = express.Router()
 
@@ -47,12 +48,39 @@ router.post('/authenticate',async (req,res)=>{
     res.send({user,token:generateToken({id:user.id})})
 })
 
-router.post("/forgot",async (req,res)=>{
+router.post("/forgot_password",async (req,res)=>{
     const {email} = req.body
    try {
-       
+       const user = await User.findOne({email}) 
+
+       if(!user)
+        return res.status(400).send({error:"User not found"})
+
+        const token = crypito.randomBytes(20).toString('hex')
+        const now = new Date()
+
+        now.setHours(now.getHours()+1)
+
+        await User.findByIdAndUpdate(user.id,{
+            '$set':{
+                passwordResetToken:token,
+                passwordResetExpires:now
+            }
+        })
+        
+       mailer.sendMail({
+            to:email,
+            from:"salesjuan781@teste.com.br",
+            template:'auth/forgof_password',
+            context:{token},
+        },(err)=>{
+            if(err) return res.status(400).send({error:"não deu certo"})
+            return res.send({menssage:"deu certo"})
+        })
+        
    } catch (error) {
-       
+       console.log(error)
+       res.status(400).send({error:"Error on forgot password"})
    }
 })
 module.exports= app => app.use('/auth',router)
