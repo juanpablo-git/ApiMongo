@@ -71,8 +71,7 @@ router.post("/forgot_password",async (req,res)=>{
        mailer.sendMail({
             to:email,
             from:"salesjuan781@teste.com.br",
-            template:'auth/forgof_password',
-            context:{token},
+            html: `<b>seu Token: ${token}</b>`,
         },(err)=>{
             if(err) return res.status(400).send({error:"não deu certo"})
             return res.send({menssage:"deu certo"})
