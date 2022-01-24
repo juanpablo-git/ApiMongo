@@ -82,4 +82,25 @@ router.post("/forgot_password",async (req,res)=>{
        res.status(400).send({error:"Error on forgot password"})
    }
 })
+
+router.post("/reset_password",async (req,res)=>{
+    const {email,token,password} = req.body
+    try {
+        const user = await User.findOne({email})
+        .select('passwordResetToken passwordResetExpires')
+
+        if(!user) return res.send({error:"User not found"})
+
+        if(token !== user.passwordResetToken) return res.status(400).send({error:"Token invalid"})
+        const now = new Date()
+        if(now > user.passwordResetExpires) return res.status(400).send({error:"Token expired"})
+        user.password = password
+
+        await user.save()
+
+        res.send()
+    } catch (error) {
+        res.status(400).send({error})
+    }
+})
 module.exports= app => app.use('/auth',router)
